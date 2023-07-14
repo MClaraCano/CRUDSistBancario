@@ -54,20 +54,31 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto updateAccount(Long id, AccountDto accountDto){
+    public AccountDto updateAccount(Long id, AccountDto account){
 
-        Optional<Account> accountFoundById = repository.findById(id);
+        Optional<Account> accountCreated = repository.findById(id);
 
-        if (accountFoundById.isPresent()){
-            Account entity = accountFoundById.get();
+        if (accountCreated.isPresent()){
+            //me traigo la entidad de base de datos. esta es la que voy a modificar
+            Account entity = accountCreated.get();
+            //valido que informacion traigo en el request para solo modificar lo de la peticion y no toda la entidad
+            if (account.getAmount()!=null){
+                entity.setBalance(account.getAmount());
+            }
+            if (account.getOwner()!=null){
+                //si hay un owner en el body me traigo la entidad completa de bd por el id para vinculale ese usuario a la cuenta
+                User user=userRepository.getReferenceById(account.getOwner().getId());
+                if (user!=null){
+                    entity.setOwner(user);
+                }
 
-            Account accountModificada = AccountMapper.dtoToAccount(accountDto);
+            }
+            //no hay que usar este maper ya que te crea un account distinto al de bd y no tiene los valores del account en cuestion, hay que modificar solo el account traido de base de datos
+            //Account accountUpdated = AccountMapper.dtoToAccount(account);
 
-            accountModificada.setId(entity.getId());
+            Account saved = repository.save(entity);
 
-            Account guardada = repository.save(accountModificada);
-
-            return AccountMapper.AccountToDto(guardada);
+            return AccountMapper.AccountToDto(saved);
         } else {
             throw new AccountNotFoundException("Account not found with id: " + id);
         }

@@ -3,6 +3,8 @@ package com.webclara.pruebaspring.application.services;
 import com.webclara.pruebaspring.api.dtos.AccountDto;
 import com.webclara.pruebaspring.api.dtos.UserDto;
 import com.webclara.pruebaspring.api.mappers.UserMapper;
+import com.webclara.pruebaspring.application.exceptions.InsufficientFundsException;
+import com.webclara.pruebaspring.application.exceptions.ServiceAdvice;
 import com.webclara.pruebaspring.domain.exceptions.AccountNotFoundException;
 import com.webclara.pruebaspring.domain.models.Account;
 import com.webclara.pruebaspring.domain.models.User;
@@ -25,12 +27,10 @@ public class UserService {
     @Autowired
     private AccountRepository accountRepository;
     public UserService(UserRepository repository,AccountRepository accountRepository){
-
         this.repository = repository;
         this.accountRepository=accountRepository;
     }
 
-    // Primero generar los metodos del CRUD
 
     public List<UserDto> getUsers(){
         List<User> users = repository.findAll();
@@ -39,8 +39,21 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    /*
     public UserDto getUserById(Long id){
-        return UserMapper.userMapToDto(repository.findById(id).get());
+        User user = repository.findById(id).orElse(null);
+        UserDto userDto = UserMapper.userMapToDto(user);
+        return userDto;
+    }
+     */
+
+    public UserDto getUserById(Long id) throws Exception {
+        User user = repository.findById(id).orElse(null);
+        if (user == null){
+            throw new Exception();
+        }
+        UserDto userDto = UserMapper.userMapToDto(user);
+        return userDto;
     }
 
 
