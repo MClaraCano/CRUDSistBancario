@@ -11,6 +11,7 @@ import com.webclara.pruebaspring.domain.models.User;
 import com.webclara.pruebaspring.infraestructure.repositories.AccountRepository;
 import com.webclara.pruebaspring.infraestructure.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,75 +23,80 @@ public class UserService {
 
     // Declaro una instancia del repositorio con @Autowired y sin la anotación
     @Autowired
-    private UserRepository repository;
+    private UserRepository userRepository;
 
     @Autowired
     private AccountRepository accountRepository;
     public UserService(UserRepository repository,AccountRepository accountRepository){
-        this.repository = repository;
+        this.userRepository = repository;
         this.accountRepository=accountRepository;
     }
 
 
     public List<UserDto> getUsers(){
-        List<User> users = repository.findAll();
+        List<User> users = userRepository.findAll();
         return users.stream()
                 .map(UserMapper::userMapToDto)
                 .collect(Collectors.toList());
     }
 
-    /*
-    public UserDto getUserById(Long id){
-        User user = repository.findById(id).orElse(null);
-        UserDto userDto = UserMapper.userMapToDto(user);
-        return userDto;
-    }
-     */
 
     public UserDto getUserById(Long id) throws Exception {
-        User user = repository.findById(id).orElse(null);
+        User user = userRepository.findById(id).orElse(null);
         if (user == null){
-            throw new Exception();
+            throw new ChangeSetPersister.NotFoundException();
         }
         UserDto userDto = UserMapper.userMapToDto(user);
         return userDto;
     }
 
 
-    public UserDto createUser(UserDto user){
-        return UserMapper.userMapToDto(repository.save(UserMapper.dtoToUser(user)));
+    public UserDto createUser(UserDto userDto) throws Exception {
+        if (userDto.getUsername() == "" || userDto.getPassword() == ""
+        || userDto.getUsername() == null || userDto.getPassword() == null){
+            throw new NullPointerException();
+        }
+        return UserMapper.userMapToDto(userRepository.save(UserMapper.dtoToUser(userDto)));
     }
 
-    public UserDto update(Long id, UserDto user){
+    public UserDto update(Long id, UserDto userDto) throws ChangeSetPersister.NotFoundException {
 
-        Optional<User> userCreated = repository.findById(id);
+        //Optional<User> userCreated = repository.findById(id);
+        //if (userCreated.isPresent())
 
-        if (userCreated.isPresent()){
-            User entity = userCreated.get();
+        User user = userRepository.findById(id).orElse(null);
+        if (user != null)
 
-            User accountUpdated = UserMapper.dtoToUser(user);
-            accountUpdated.setAccounts(entity.getAccounts());
+        {
+            //User entity = userCreated.get();
 
-            if (user.getIdAccounts() != null) { // Verifica que la lista de cuentas no sea null
-                List <Account> accountList =accountRepository.findAllById(user.getIdAccounts());
-                List<Account> accountListFilter=accountList.stream().filter(e->!entity.getAccounts().contains(e)).collect(Collectors.toList());
-                accountUpdated.getAccounts().addAll(accountListFilter);
-                accountUpdated.setAccounts(accountList);
+            User accountActualizada = UserMapper.dtoToUser(userDto);
+            accountActualizada.setAccounts(user.getAccounts());
+
+            List<Long> listaIdAc = userDto.getIdAccounts();
+
+            if (listaIdAc != null) { // Verifica que la lista de cuentas no sea null
+                List<Account> accountList = accountRepository.findAllById(listaIdAc);
+                List<Account> accountListFiltrada = accountList.stream()
+                        .filter(e -> !user.getAccounts().contains(e))
+                                .collect(Collectors.toList());
+                accountActualizada.getAccounts().addAll(accountListFiltrada);
+                accountActualizada.setAccounts(accountList);
             }
 
-            accountUpdated.setId(entity.getId());
+            accountActualizada.setId(user.getId());
 
-            User saved = repository.save(accountUpdated);
+            User saved = userRepository.save(accountActualizada);
 
             return UserMapper.userMapToDto(saved);
         } else {
-            throw new AccountNotFoundException("User not found with id: " + id);
+            throw new ChangeSetPersister.NotFoundException();
         }
     }
 
     public String delete(Long id){
-        if (repository.existsById(id)){
-            repository.deleteById(id);
+        if (userRepository.existsById(id)){
+            userRepository.deleteById(id);
             return "Se ha eliminado el usuario";
         } else {
             return "No se ha eliminado el usuario";

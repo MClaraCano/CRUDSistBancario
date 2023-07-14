@@ -5,6 +5,7 @@ import com.webclara.pruebaspring.api.mappers.UserMapper;
 import com.webclara.pruebaspring.application.services.UserService;
 import com.webclara.pruebaspring.domain.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,12 +50,12 @@ public class UserController {
     }
 
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDto> createUser(@RequestBody UserDto dto){
+    public ResponseEntity<UserDto> createUser(@RequestBody UserDto dto) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createUser(dto));
     }
 
     @PutMapping(value = "/users/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto user){
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto user) throws ChangeSetPersister.NotFoundException {
         return ResponseEntity.status(HttpStatus.OK).body(service.update(id, user));
     }
 
