@@ -10,9 +10,11 @@ import com.webclara.pruebaspring.domain.models.Transfer;
 import com.webclara.pruebaspring.infraestructure.repositories.AccountRepository;
 import com.webclara.pruebaspring.infraestructure.repositories.TransfersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,44 +23,31 @@ import java.util.stream.Collectors;
 public class TransferService {
 
     @Autowired
-    private TransfersRepository repository;
+    private TransfersRepository transfersRepository;
 
     @Autowired
     private AccountRepository accountRepository;
+    private AccountService accountService;
 
     public TransferService(TransfersRepository repository){
-        this.repository = repository;
+        this.transfersRepository = repository;
     }
 
 
     public List<TransferDto> getTransfers(){
-        List<Transfer> transfers = repository.findAll();
+        List<Transfer> transfers = transfersRepository.findAll();
         return transfers.stream()
                 .map(TransferMapper::transferToDto)
                 .collect(Collectors.toList());
     }
 
-    public TransferDto getTransferById(Long id){
-        Transfer transfer = repository.findById(id).orElseThrow(() ->
-                new TransferNotFoundException("Transfer not found with id: " + id));
+    public TransferDto getTransferById(Long id) throws ChangeSetPersister.NotFoundException {
+        Transfer transfer = transfersRepository.findById(id).orElseThrow(() ->
+                new ChangeSetPersister.NotFoundException());
         return TransferMapper.transferToDto(transfer);
     }
 
-    public TransferDto updateTransfer(Long id, TransferDto transferDto){
-        Transfer transfer = repository.findById(id).orElseThrow(() -> new TransferNotFoundException("Transfer not found with id: " + id));
-        Transfer updatedTransfer = TransferMapper.dtoToTransfer(transferDto);
-        updatedTransfer.setId(transfer.getId());
-        return TransferMapper.transferToDto(repository.save(updatedTransfer));
-    }
 
-    public String deleteTransfer(Long id){
-        if (repository.existsById(id)){
-            repository.deleteById(id);
-            return "Se han eliminado los datos de la transferencia";
-        } else {
-            return "No se ha encontrado la transferencia";
-        }
-    }
 
     @Transactional
     public TransferDto performTransfer(TransferDto dto) {
@@ -90,11 +79,16 @@ public class TransferService {
         transfer.setOrigin(originAccount.getId());
         transfer.setTarget(destinationAccount.getId());
         transfer.setAmount(dto.getAmount());
-        transfer = repository.save(transfer);
+        transfer = transfersRepository.save(transfer);
 
         // Devolver el DTO de la transferencia realizada
         return TransferMapper.transferToDto(transfer);
     }
+
+
+
+
+
 
 
 }

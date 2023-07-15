@@ -99,7 +99,7 @@ public class AccountService {
 
     // Métodos para usar en TRANSFER
 
-    public Account buscarPorId(Long id) throws ChangeSetPersister.NotFoundException {
+    public Account buscarPorId(Long id) throws ChangeSetPersister.NotFoundException{
         Account account = accountRepository.findById(id).orElse(null);
         if (account != null){
             return account;
@@ -110,39 +110,7 @@ public class AccountService {
 
 
 
-    public BigDecimal egresarDinero(BigDecimal monto, Long id) throws ChangeSetPersister.NotFoundException {
-        //1. Buscar cuenta por ID
-        Account account = buscarPorId(id);
-        //2. Recuperar el saldo de la cuenta
-        BigDecimal saldo = account.getBalance();
 
-        //3. Validar si hay dinero disponible en cuenta
-        if (saldo.compareTo(monto) >= 0) {
-
-            //4. Restar el monto al saldo de la cuenta
-            BigDecimal nuevoSaldo = saldo.subtract(monto);
-
-            //5. Devolvemor el nuevo saldo de la cuenta
-            return nuevoSaldo;
-        } else {
-            throw new ChangeSetPersister.NotFoundException();
-        }
-    }
-
-    public BigDecimal ingresarDinero(BigDecimal monto, Long id) throws ChangeSetPersister.NotFoundException {
-        //1. Buscar cuenta por ID
-        Account account = buscarPorId(id);
-
-        //2. Recuperar el saldo de la cuenta
-        BigDecimal saldo = account.getBalance();
-
-        //4. Sumar el monto al saldo de la cuenta
-        BigDecimal nuevoSaldo = saldo.add(monto);
-
-        //5. Devolvemor el nuevo saldo de la cuenta
-        return nuevoSaldo;
-
-    }
 
 
 
