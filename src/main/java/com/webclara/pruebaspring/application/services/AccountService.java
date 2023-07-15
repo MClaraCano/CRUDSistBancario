@@ -1,6 +1,7 @@
 package com.webclara.pruebaspring.application.services;
 
 import com.webclara.pruebaspring.api.dtos.AccountDto;
+import com.webclara.pruebaspring.api.dtos.UserDto;
 import com.webclara.pruebaspring.api.mappers.AccountMapper;
 import com.webclara.pruebaspring.domain.exceptions.AccountNotFoundException;
 import com.webclara.pruebaspring.domain.models.Account;
@@ -21,14 +22,14 @@ import java.util.stream.Collectors;
 public class AccountService {
     // Declaro una instancia del repositorio con @Autowired y sin la anotación
     @Autowired
-    private AccountRepository repository;
+    private AccountRepository accountRepository;
     @Autowired
     private UserRepository userRepository;
 
 
     @Transactional
     public List<AccountDto> getAccounts(){
-        List<Account> accounts = repository.findAll();
+        List<Account> accounts = accountRepository.findAll();
         return accounts.stream()
                 .map(AccountMapper::AccountToDto)
                 .collect(Collectors.toList());
@@ -42,7 +43,7 @@ public class AccountService {
 
         Account account = AccountMapper.dtoToAccount(accountDto);
         account.setOwner(entidad);
-        account = repository.save(account);
+        account = accountRepository.save(account);
 
         AccountDto dto = AccountMapper.AccountToDto(account);
         return dto;
@@ -50,7 +51,7 @@ public class AccountService {
 
     @Transactional
     public AccountDto getAccountById(Long id) throws ChangeSetPersister.NotFoundException {
-        Account account = repository.findById(id).orElse(null);
+        Account account = accountRepository.findById(id).orElse(null);
         if (account == null){
             throw new ChangeSetPersister.NotFoundException();
         } else {
@@ -60,42 +61,33 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto updateAccount(Long id, AccountDto account){
+    public AccountDto updateAccount(Long id, AccountDto accountDto) throws ChangeSetPersister.NotFoundException {
 
-        Optional<Account> accountCreated = repository.findById(id);
+        Account account = accountRepository.findById(id).orElse(null);
 
-        if (accountCreated.isPresent()){
-            //me traigo la entidad de base de datos. esta es la que voy a modificar
-            Account entity = accountCreated.get();
-            //valido que informacion traigo en el request para solo modificar lo de la peticion y no toda la entidad
-            if (account.getAmount()!=null){
-                entity.setBalance(account.getAmount());
+        if (account != null){
+            if (accountDto.getAmount() !=  null){
+                account.setBalance(accountDto.getAmount());
             }
-            if (account.getOwner()!=null){
-                //si hay un owner en el body me traigo la entidad completa de bd por el id para vinculale ese usuario a la cuenta
-                User user=userRepository.getReferenceById(account.getOwner().getId());
+            if (accountDto.getOwner() != null){
+                Long idDto = accountDto.getOwner().getId();
+                User user = userRepository.getReferenceById(idDto);
                 if (user!=null){
-                    entity.setOwner(user);
+                    account.setOwner(user);
                 }
-
             }
-            //no hay que usar este maper ya que te crea un account distinto al de bd y no tiene los valores del account en cuestion, hay que modificar solo el account traido de base de datos
-            //Account accountUpdated = AccountMapper.dtoToAccount(account);
-
-            Account saved = repository.save(entity);
-
-            return AccountMapper.AccountToDto(saved);
+            accountRepository.save(account);
+            return AccountMapper.AccountToDto(account);
         } else {
-            throw new AccountNotFoundException("Account not found with id: " + id);
+            throw new ChangeSetPersister.NotFoundException();
         }
-
     }
 
     @Transactional
     public String deleteAccount(Long id){
 
-        if (repository.existsById(id)){
-            repository.deleteById(id);
+        if (accountRepository.existsById(id)){
+            accountRepository.deleteById(id);
             return "Se ha eliminado la cuenta";
         } else {
             return "El ID no existe; no se pudo eliminar la cuenta";
@@ -103,7 +95,54 @@ public class AccountService {
 
     }
 
-    // Agregar métodos de ingreso y egreso de dinero y realizacion de transferencia
+
+
+    // Métodos para usar en TRANSFER
+
+    public Account buscarPorId(Long id) throws ChangeSetPersister.NotFoundException {
+        Account account = accountRepository.findById(id).orElse(null);
+        if (account != null){
+            return account;
+        } else {
+            throw new ChangeSetPersister.NotFoundException();
+        }
+    }
+
+
+
+    public BigDecimal egresarDinero(BigDecimal monto, Long id) throws ChangeSetPersister.NotFoundException {
+        //1. Buscar cuenta por ID
+        Account account = buscarPorId(id);
+        //2. Recuperar el saldo de la cuenta
+        BigDecimal saldo = account.getBalance();
+
+        //3. Validar si hay dinero disponible en cuenta
+        if (saldo.compareTo(monto) >= 0) {
+
+            //4. Restar el monto al saldo de la cuenta
+            BigDecimal nuevoSaldo = saldo.subtract(monto);
+
+            //5. Devolvemor el nuevo saldo de la cuenta
+            return nuevoSaldo;
+        } else {
+            throw new ChangeSetPersister.NotFoundException();
+        }
+    }
+
+    public BigDecimal ingresarDinero(BigDecimal monto, Long id) throws ChangeSetPersister.NotFoundException {
+        //1. Buscar cuenta por ID
+        Account account = buscarPorId(id);
+
+        //2. Recuperar el saldo de la cuenta
+        BigDecimal saldo = account.getBalance();
+
+        //4. Sumar el monto al saldo de la cuenta
+        BigDecimal nuevoSaldo = saldo.add(monto);
+
+        //5. Devolvemor el nuevo saldo de la cuenta
+        return nuevoSaldo;
+
+    }
 
 
 

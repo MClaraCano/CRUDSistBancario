@@ -39,7 +39,7 @@ public class AccountController {
     }
 
     @PutMapping(value = "/accounts/{id}")
-    public ResponseEntity<AccountDto> updateAccount(@PathVariable Long id, @RequestBody AccountDto account){
+    public ResponseEntity<AccountDto> updateAccount(@PathVariable Long id, @RequestBody AccountDto account) throws ChangeSetPersister.NotFoundException {
         return ResponseEntity.status(HttpStatus.OK).body(service.updateAccount(id, account));
     }
 
