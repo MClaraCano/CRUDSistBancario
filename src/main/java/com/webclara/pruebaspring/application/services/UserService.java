@@ -61,34 +61,29 @@ public class UserService {
 
     public UserDto update(Long id, UserDto userDto) throws ChangeSetPersister.NotFoundException {
 
-        //Optional<User> userCreated = repository.findById(id);
-        //if (userCreated.isPresent())
-
         User user = userRepository.findById(id).orElse(null);
-        if (user != null)
 
-        {
-            //User entity = userCreated.get();
+        if (user != null) {
 
-            User accountActualizada = UserMapper.dtoToUser(userDto);
-            accountActualizada.setAccounts(user.getAccounts());
+            User userActualizado = UserMapper.dtoToUser(userDto);
+            //userActualizado.setAccounts(user.getAccounts()); //este
 
             List<Long> listaIdAc = userDto.getIdAccounts();
 
             if (listaIdAc != null) { // Verifica que la lista de cuentas no sea null
                 List<Account> accountList = accountRepository.findAllById(listaIdAc);
-                List<Account> accountListFiltrada = accountList.stream()
-                        .filter(e -> !user.getAccounts().contains(e))
-                                .collect(Collectors.toList());
-                accountActualizada.getAccounts().addAll(accountListFiltrada);
-                accountActualizada.setAccounts(accountList);
+                //List<Account> accountListFiltrada = accountList.stream() //este
+                //        .filter(e -> !user.getAccounts().contains(e)) //este
+                //               .collect(Collectors.toList()); //este
+                //userActualizado.getAccounts().addAll(accountListFiltrada); //este
+                userActualizado.setAccounts(accountList);
             }
 
-            accountActualizada.setId(user.getId());
+            userActualizado.setId(user.getId());
 
-            User saved = userRepository.save(accountActualizada);
+            user = userRepository.save(userActualizado);
 
-            return UserMapper.userMapToDto(saved);
+            return UserMapper.userMapToDto(user);
         } else {
             throw new ChangeSetPersister.NotFoundException();
         }

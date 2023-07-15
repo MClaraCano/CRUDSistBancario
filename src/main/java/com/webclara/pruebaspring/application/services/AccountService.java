@@ -8,6 +8,7 @@ import com.webclara.pruebaspring.domain.models.User;
 import com.webclara.pruebaspring.infraestructure.repositories.AccountRepository;
 import com.webclara.pruebaspring.infraestructure.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -48,9 +49,14 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountDto getAccountById(Long id) {
-        AccountDto account = AccountMapper.AccountToDto(repository.findById(id).get()); //O: .findById(id).orElse(null);
-        return account;
+    public AccountDto getAccountById(Long id) throws ChangeSetPersister.NotFoundException {
+        Account account = repository.findById(id).orElse(null);
+        if (account == null){
+            throw new ChangeSetPersister.NotFoundException();
+        } else {
+            AccountDto accountDto = AccountMapper.AccountToDto(account);
+            return accountDto;
+        }
     }
 
     @Transactional
@@ -98,27 +104,7 @@ public class AccountService {
     }
 
     // Agregar métodos de ingreso y egreso de dinero y realizacion de transferencia
-    public BigDecimal withdraw(BigDecimal amount, Long idOrigin){
-        // primero: Obtenemos la cuenta
-        Account account = repository.findById(idOrigin).orElse(null);
-        // segundo: debitamos el valor del amount con el amount de esa cuenta (validar si hay dinero disponible)
-        if (account.getBalance().subtract(amount).intValue() > 0){
-            account.setBalance(account.getBalance().subtract(amount));
-            repository.save(account);
-        }
-        // tercero: devolvemos esa cantidad
-        return account.getBalance().subtract(amount);
-    }
 
-    public BigDecimal addAmountToAccount(BigDecimal amount, Long idOrigin){
-        // primero: Obtenemos la cuenta
-        Account account = repository.findById(idOrigin).orElse(null);
-        // segundo: acreditamos el valor del amount con el amount de esa cuenta
-        account.setBalance(account.getBalance().add(amount));
-        repository.save(account);
-        // tercero: devolvemos esa cantidad
-        return amount;
-    }
 
 
 
