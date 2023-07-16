@@ -1,8 +1,11 @@
 package com.webclara.pruebaspring.api.controllers;
 
 import com.webclara.pruebaspring.api.dtos.UserDto;
+import com.webclara.pruebaspring.api.mappers.UserMapper;
 import com.webclara.pruebaspring.application.services.UserService;
+import com.webclara.pruebaspring.domain.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,40 +24,41 @@ public class UserController {
     }
 
 
-    // Metodos HTTP
-    // GET
+
     @GetMapping(value = "/users")
     public ResponseEntity<List<UserDto>> getUsers(){
-
-        // 1) Obtener la lista de todos los DTO user de la DB
-        // Agregar el servicio a la implementación del método del controlador
         List<UserDto> usuarios = service.getUsers();
-
-        // 2) Devolver la lista y enviar como respuesta
         return ResponseEntity.status(HttpStatus.OK).body(usuarios);
     }
 
-    // GET USER
+    /*
     @GetMapping(value = "/users/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id){
-        return ResponseEntity.status(HttpStatus.OK).body(service.getUserById(id));
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) throws Exception {
+        UserDto userDto = service.getUserById(id);
+        if (userDto == null){
+            throw new Exception("ERROR");
+        } else {
+            return ResponseEntity.status(HttpStatus.OK).body(userDto);
+        }
+    }
+     */
+
+    @GetMapping(value = "/users/{id}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) throws Exception {
+        UserDto userDto = service.getUserById(id);
+        return ResponseEntity.status(HttpStatus.OK).body(userDto);
     }
 
-    // POST
-
     @PostMapping(value = "/users")
-    public ResponseEntity<UserDto> createUser(@RequestBody UserDto dto){
+    public ResponseEntity<UserDto> createUser(@RequestBody UserDto dto) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createUser(dto));
     }
 
-    // PUT
-
     @PutMapping(value = "/users/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto user){
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto user) throws ChangeSetPersister.NotFoundException {
         return ResponseEntity.status(HttpStatus.OK).body(service.update(id, user));
     }
 
-    // DELETE
     @DeleteMapping(value = "/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id){
         String mensaje = service.delete(id);
