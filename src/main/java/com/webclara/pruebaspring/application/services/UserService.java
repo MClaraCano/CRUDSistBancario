@@ -66,16 +66,11 @@ public class UserService {
         if (user != null) {
 
             User userActualizado = UserMapper.dtoToUser(userDto);
-            //userActualizado.setAccounts(user.getAccounts()); //este
 
             List<Long> listaIdAc = userDto.getIdAccounts();
 
             if (listaIdAc != null) { // Verifica que la lista de cuentas no sea null
                 List<Account> accountList = accountRepository.findAllById(listaIdAc);
-                //List<Account> accountListFiltrada = accountList.stream() //este
-                //        .filter(e -> !user.getAccounts().contains(e)) //este
-                //               .collect(Collectors.toList()); //este
-                //userActualizado.getAccounts().addAll(accountListFiltrada); //este
                 userActualizado.setAccounts(accountList);
             }
 

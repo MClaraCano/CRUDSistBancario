@@ -40,9 +40,4 @@ public class TransferController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.performTransfer(dto));
     }
 
-
-
-
-
-
 }
